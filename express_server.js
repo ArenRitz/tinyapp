@@ -43,7 +43,7 @@ app.post("/urls", (req, res) => {
   const longURL = req.body.longURL;
   addToDatabase(id, longURL);
   console.log(urlDatabase);
-  res.redirect(`/urls/${id}`); 
+  res.redirect(`/urls/${id}`);
 });
 
 app.get("/urls/:id", (req, res) => {
@@ -65,7 +65,6 @@ app.post("/urls/:id/delete", (req, res) => {
 app.post("/urls/:id/update", (req, res) => {
   urlDatabase[req.params.id] = req.body.longURL;
   res.redirect("/");
-
 });
 
 
