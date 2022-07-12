@@ -2,6 +2,7 @@ const generateRandomString = () => {
   return Math.random().toString(36).substring(2, 8);
 }
 
+
 const addToDatabase = (id, url) => {
   urlDatabase[id] = url;
 }
@@ -54,6 +55,13 @@ app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
 });
+
+app.post("/urls/:id/delete", (req, res) => {
+  delete urlDatabase[req.params.id];
+  const templateVars = { urls: urlDatabase };
+  res.render("urls_index", templateVars);
+});
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
