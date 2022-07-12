@@ -2,6 +2,10 @@ const generateRandomString = () => {
   return Math.random().toString(36).substring(2, 8);
 }
 
+const addToDatabase = (id, url) => {
+  urlDatabase[id] = url;
+}
+
 
 const express = require("express");
 const app = express();
