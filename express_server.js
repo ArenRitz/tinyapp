@@ -1,3 +1,9 @@
+const generateRandomString = () => {
+  return Math.random().toString(36).substring(2, 8);
+}
+
+
+
 const express = require("express");
 const app = express();
 const PORT = 8080;
@@ -10,11 +16,8 @@ const urlDatabase = {
 };
 
 app.get("/", (req, res) => {
-  res.send("Hello!");
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
+  const templateVars = { urls: urlDatabase };
+  res.render("urls_index", templateVars);
 });
 
 app.get("/urls", (req, res) => {
