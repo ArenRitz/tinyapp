@@ -20,9 +20,9 @@
     </div>
     <div>
       <% if (username) { %>
-      <p>Logged in as <%= username %></p>
+      <h4>Logged in as <%= username %></h4>
       <% } else if (!username) { %>
-      <p>Not logged in</p>
+      <h4>Not logged in</h4>
       <% } %>
     </div>
     <form class="form-inline" method="POST" action="/login">

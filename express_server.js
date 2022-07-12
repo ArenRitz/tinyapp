@@ -14,38 +14,31 @@ const addToDatabase = (id, url) => {
 }
 
 
-
-
-
 const express = require("express");
 const app = express();
 const PORT = 8080;
-let cookieParser = require('cookie-parser')
-
-app.use(cookieParser());
 app.set("view engine", "ejs");
-
-
-
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
+
+
 app.post("/login", (req, res) => {
-  console.log(req.body)
   res.cookie("username", req.body.username);
   res.redirect("/urls");
-  
 });
 
+app.post("/logout", (req, res) => {
+  res.clearCookie("username")
+  res.redirect("/urls");
+});
 
 
 app.get("/", (req, res) => {
   const templateVars = { urls: urlDatabase, username: req.cookies["username"], };
   res.render("urls_index", templateVars);
 });
-
-
-
-
 
 
 app.get("/urls", (req, res) => {
