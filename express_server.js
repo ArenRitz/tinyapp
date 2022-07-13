@@ -5,7 +5,7 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-const users = {
+const usersDb = {
   admin: {
     id: "admin",
     email: "admin@admin.io",
@@ -26,12 +26,21 @@ const addLinkToDatabase = (id, url) => {
 }
 
 const getUserByCookie = (cookie) => {
-  for (let user in users) {
-    if (users[user].id === cookie) {
-      return users[user];
+  for (let user in usersDb) {
+    if (usersDb[user].id === cookie) {
+      return usersDb[user];
     }
   }
   return undefined;
+}
+
+const existingUserCheck = (email) => {
+  for (let user in usersDb) {
+    if (usersDb[user].email === email) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // Settings
@@ -40,6 +49,7 @@ const app = express();
 const PORT = 8080;
 app.set("view engine", "ejs");
 const cookieParser = require('cookie-parser');
+const e = require("express");
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
@@ -48,9 +58,15 @@ app.use(express.urlencoded({ extended: true }));
 
 app.post("/register", (req, res) => {
   const user_id = generateRandomString();
+  if (!req.body.email || !req.body.password) {
+    res.status(400).send("Please enter an email and password");
+  } else if (existingUserCheck(req.body.email)) {
+    res.status(400).send("Email already exists");
+  } else {
   res.cookie("user_id", user_id);
-  users[user_id] = { "id": user_id, "email": req.body.email, "password": req.body.password };
+  usersDb[user_id] = { "id": user_id, "email": req.body.email, "password": req.body.password };
   res.redirect("/urls");
+  }
 });
 
 app.post("/login", (req, res) => {
@@ -83,44 +99,22 @@ app.post("/urls/:id/update", (req, res) => {
 // Get
 
 app.get("/", (req, res) => {
-  const templateVars = { urls: urlDatabase, user: undefined };
-  const userCheck = getUserByCookie(req.cookies["user_id"]);
-  if (userCheck) {
-    templateVars["user"] = userCheck;
-  }
-  console.log(templateVars)
+  const templateVars = { urls: urlDatabase, user: getUserByCookie(req.cookies["user_id"]) };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, user: undefined };
-  const userCheck = getUserByCookie(req.cookies["user_id"]);
-  if (userCheck) {
-    templateVars["user"] = userCheck;
-  }
-  console.log(templateVars)
+  const templateVars = { urls: urlDatabase, user: getUserByCookie(req.cookies["user_id"]) };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = { user: undefined };
-
-  const userCheck = getUserByCookie(req.cookies["user_id"]);
-  if (userCheck) {
-    templateVars["user"] = userCheck;
-  }
-  console.log(templateVars)
+  const templateVars = { user: getUserByCookie(req.cookies["user_id"]) };
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:id", (req, res) => {
-
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user: undefined };
-  const userCheck = getUserByCookie(req.cookies["user_id"]);
-  if (userCheck) {
-    templateVars["user"] = userCheck;
-  }
-  console.log(templateVars)
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user: getUserByCookie(req.cookies["user_id"]) };
   res.render("urls_show", templateVars);
 });
 
@@ -130,12 +124,7 @@ app.get("/u/:id", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id], user: undefined };
-  const userCheck = getUserByCookie(req.cookies["user_id"]);
-  if (userCheck) {
-    templateVars["user"] = userCheck;
-  }
-  console.log(templateVars)
+  const templateVars = { user: getUserByCookie(req.cookies["user_id"]) };
   res.render("urls_register", templateVars);
 });
 
