@@ -33,9 +33,18 @@ const getUserByCookie = (cookie) => {
   return undefined;
 }
 
-const existingUserCheck = (email) => {
+const getUserByEmail = (email) => {
   for (let user in usersDb) {
     if (usersDb[user].email === email) {
+      return usersDb[user];
+    }
+  }
+  return undefined;
+}
+
+const passwordCheck = (password) => {
+  for (let user in usersDb) {
+    if (usersDb[user].password === password) {
       return true;
     }
   }
@@ -59,22 +68,28 @@ app.post("/register", (req, res) => {
   const user_id = generateRandomString();
   if (!req.body.email.trim() || !req.body.password.trim()) {
     res.status(400).send("Please enter an email and password");
-  } else if (existingUserCheck(req.body.email)) {
-    res.status(400).send("Email already exists");
+  } else if (getUserByEmail(req.body.email)) {
+    res.status(400).send("Account already exists");
   } else {
-  res.cookie("user_id", user_id);
-  usersDb[user_id] = { "id": user_id, "email": req.body.email, "password": req.body.password };
-  res.redirect("/urls");
+    res.cookie("user_id", user_id);
+    usersDb[user_id] = { "id": user_id, "email": req.body.email, "password": req.body.password };
+    res.redirect("/urls");
   }
 });
 
 app.post("/login", (req, res) => {
-  res.cookie("user", req.body.username);
-  res.redirect("/urls");
+  if (!getUserByEmail(req.body.email.trim())) {
+    res.status(403).send("User does not exist")
+  } else if (!passwordCheck(req.body.password))
+    res.status(403).send("Password is incorrect")
+  else {
+    res.cookie("user_id", getUserByEmail(req.body.email).id);
+    res.redirect("/urls");
+  }
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("username")
+  res.clearCookie("user_id")
   res.redirect("/urls");
 });
 
