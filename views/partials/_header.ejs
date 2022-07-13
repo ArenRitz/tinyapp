@@ -12,16 +12,16 @@
       </div>
     </div>
   
-      <% if (username) { %>
+      <% if (user) { %>
       
-        <h5 style="margin-right: 1em; margin-top: 0.5em;">Logged in as <%= username %>   </h5>
+        <h5 style="margin-right: 1em; margin-top: 0.5em;">Logged in as <%= user.email %>   </h5>
  
           <form class="form-inline" method="POST" action="/logout">
             <input type="submit" value="Log out" class="btn btn-outline-dark">
           </form>
        
 
-        <% } else if (!username) { %>
+        <% } else if (!user) { %>
         
           <h5>Not logged in</h5>
   
