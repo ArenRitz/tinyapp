@@ -20,7 +20,6 @@ const generateRandomString = () => {
   return Math.random().toString(36).substring(2, 8);
 }
 
-
 const addLinkToDatabase = (id, url) => {
   urlDatabase[id] = url;
 }
@@ -58,7 +57,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.post("/register", (req, res) => {
   const user_id = generateRandomString();
-  if (!req.body.email || !req.body.password) {
+  if (!req.body.email.trim() || !req.body.password.trim()) {
     res.status(400).send("Please enter an email and password");
   } else if (existingUserCheck(req.body.email)) {
     res.status(400).send("Email already exists");
@@ -70,7 +69,7 @@ app.post("/register", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  res.cookie("username", req.body.username);
+  res.cookie("user", req.body.username);
   res.redirect("/urls");
 });
 
@@ -118,17 +117,20 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-app.get("/u/:id", (req, res) => {
-  const longURL = urlDatabase[req.params.id];
-  res.redirect(longURL);
-});
-
 app.get("/register", (req, res) => {
   const templateVars = { user: getUserByCookie(req.cookies["user_id"]) };
   res.render("urls_register", templateVars);
 });
 
+app.get("/login", (req, res) => {
+  const templateVars = { user: getUserByCookie(req.cookies["user_id"]) };
+  res.render("urls_login", templateVars)
+});
 
+app.get("/u/:id", (req, res) => {
+  const longURL = urlDatabase[req.params.id];
+  res.redirect(longURL);
+});
 
 // Port listener
 

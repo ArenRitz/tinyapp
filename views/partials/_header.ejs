@@ -23,11 +23,12 @@
 
         <% } else if (!user) { %>
         
-          <h5>Not logged in</h5>
   
-            <form class="form-inline" method="POST" action="/login">
-              <input type="text" placeholder="Enter username" class="form-control" type="text" name="username" style="width: 300px; margin-left: 1em; margin-right: 1em" />
+            <form class="form-inline" method="get" action="/login">
               <input type="submit" value="Log In" class="btn btn-outline-dark">
+            </form>
+            <form class="form-inline" method="get" action="/register">
+              <input type="submit" value="Register" class="btn btn-outline-dark">
             </form>
 
           <% } %>
