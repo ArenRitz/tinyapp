@@ -6,12 +6,12 @@ app.set("view engine", "ejs");
 const cookieSession = require('cookie-session');
 app.use(cookieSession({
   name: 'session',
-  keys: ['key1', 'key2'],
+  keys: ['CaNt#HaCk%ThIs^BaDdIes', 'VeRyEnCrYpTeD#PaSsW0rd'],
   maxAge: 24 * 60 * 60 * 1000
 })); // read cookies (needed for auth)
 app.use(express.urlencoded({ extended: true })); // used for form data
 const bcrypt = require("bcryptjs");  // used to hash passwords
-
+const salt = bcrypt.genSaltSync(10);
 
 // DataBase
 
@@ -32,7 +32,7 @@ const usersDatabase = {
   admin: {
     id: "admin",
     email: "admin@admin.io",
-    password: bcrypt.hashSync("admin", 10)
+    password: bcrypt.hashSync("admin", salt)
   },
 
 };
@@ -194,7 +194,7 @@ app.post("/register", (req, res) => {
     res.status(400).send("Account already exists");
   } else {
     req.session.user_id = user_id;
-    const hashedPassword = bcrypt.hashSync(req.body.password, 10);
+    const hashedPassword = bcrypt.hashSync(req.body.password, salt);
     usersDatabase[user_id] = { "id": user_id, "email": req.body.email, "password": hashedPassword };
     res.redirect("/urls");
   }
