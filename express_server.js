@@ -3,8 +3,12 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 app.set("view engine", "ejs");
-const cookieParser = require('cookie-parser');
-app.use(cookieParser()); // read cookies (needed for auth)
+const cookieSession = require('cookie-session');
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2'],
+  maxAge: 24 * 60 * 60 * 1000
+})); // read cookies (needed for auth)
 app.use(express.urlencoded({ extended: true })); // used for form data
 const bcrypt = require("bcryptjs");  // used to hash passwords
 
@@ -97,15 +101,6 @@ const getUserByEmail = (email) => {
   }
   return undefined;
 }
-// verifies password for log-in
-const passwordCheck = (password) => {
-  for (let user in usersDatabase) {
-    if (usersDatabase[user].password === password) {
-      return true;
-    }
-  }
-  return false;
-}
 // gets URL from the url id
 const getUrlbyId = (id, db) => {
   if (Object.keys(db).includes(id)) {
@@ -114,39 +109,38 @@ const getUrlbyId = (id, db) => {
   return undefined;
 }
 
-
 // Get
 
 app.get("/urls", (req, res) => {
-  const state = getUserByCookie(req.cookies["user_id"])
+  const state = req.session.user_id;
   if (!state) {
     res.send("<h1>Please login to see or add links</h1>");
   } else {
-    let currentDb = getUserDb(req.cookies["user_id"]);
-    const templateVars = { urls: currentDb, user: getUserByCookie(req.cookies["user_id"]) };
+    let currentDb = getUserDb(req.session.user_id);
+    const templateVars = { urls: currentDb, user: getUserByCookie(req.session.user_id) };
     res.render("urls_index", templateVars);
   }
 });
 
 app.get("/", (req, res) => {
-  let currentDb = getUserDb(req.cookies["user_id"]);
-  const templateVars = { urls: currentDb, user: getUserByCookie(req.cookies["user_id"]) };
+  let currentDb = getUserDb(req.session.user_id);
+  const templateVars = { urls: currentDb, user: getUserByCookie(req.session.user_id) };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  const state = getUserByCookie(req.cookies["user_id"])
+  const state = req.session.user_id;
   if (!state) {
     res.redirect("/login");
   } else {
-    const templateVars = { user: getUserByCookie(req.cookies["user_id"]) };
+    const templateVars = { user: getUserByCookie(req.session.user_id) };
     res.render("urls_new", templateVars);
   }
 });
 
 app.get("/urls/:id", (req, res) => {
-  const state = getUserByCookie(req.cookies["user_id"])
-  let currentDb = getUserDb(req.cookies["user_id"]);
+  const state = req.session.user_id;
+  let currentDb = getUserDb(req.session.user_id);
   if (!urlCheck(req.params.id, currentDb)) {
     res.status(400).send("<h1>URL does not exist</h1>");
   } else if (!state) {
@@ -155,13 +149,13 @@ app.get("/urls/:id", (req, res) => {
     res.send("<h1>You don't have access to this link or it doesn't exist</h1>");
   } else {
     console.log(currentDb[req.params.id]);
-    const templateVars = { id: req.params.id, longURL: currentDb[req.params.id], user: getUserByCookie(req.cookies["user_id"]) };
+    const templateVars = { id: req.params.id, longURL: currentDb[req.params.id], user: getUserByCookie(req.session.user_id) };
     res.render("urls_show", templateVars);
   }
 });
 
 app.get("/register", (req, res) => {
-  const state = getUserByCookie(req.cookies["user_id"])
+  const state = req.session.user_id;
   if (state) {
     res.redirect("/urls");
   } else {
@@ -171,7 +165,7 @@ app.get("/register", (req, res) => {
 });
 
 app.get("/login", (req, res) => {
-  const state = getUserByCookie(req.cookies["user_id"])
+  const state = req.session.user_id;
   if (state) {
     res.redirect("/urls");
   } else {
@@ -181,7 +175,7 @@ app.get("/login", (req, res) => {
 });
 
 app.get("/u/:id", (req, res) => {
-  let currentDb = getUserDb(req.cookies["user_id"]);
+  let currentDb = getUserDb(req.session.user_id);
   const longURL = getUrlbyId(req.params.id, currentDb);
   if (!longURL) {
     res.send("URL does not exist");
@@ -199,7 +193,7 @@ app.post("/register", (req, res) => {
   } else if (getUserByEmail(req.body.email)) {
     res.status(400).send("Account already exists");
   } else {
-    res.cookie("user_id", user_id);
+    req.session.user_id = user_id;
     const hashedPassword = bcrypt.hashSync(req.body.password, 10);
     usersDatabase[user_id] = { "id": user_id, "email": req.body.email, "password": hashedPassword };
     res.redirect("/urls");
@@ -214,7 +208,7 @@ app.post("/login", (req, res) => {
   } else if (verification.password === false) {
     res.status(403).send("Password is incorrect");
   } else {
-    res.cookie("user_id", getUserByEmail(req.body.email).id);
+    req.session.user_id = getUserByEmail(req.body.email).id;
     res.redirect("/urls");
   }
 });
@@ -222,26 +216,26 @@ app.post("/login", (req, res) => {
 
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id")
+  req.session.user_id = null;
   res.redirect("/login");
 });
 
 app.post("/urls", (req, res) => {
-  const state = getUserByCookie(req.cookies["user_id"])
+  const state = req.session.user_id;
   if (!state) {
     res.send("Please login to create a new URL");
   } else {
     const id = generateRandomString();
     const longURL = req.body.longURL;
-    const userID = req.cookies["user_id"];
+    const userID = req.session.user_id;
     addLinkToDatabase(id, longURL, userID);
     res.redirect(`/urls/${id}`);
   }
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  const state = getUserByCookie(req.cookies["user_id"])
-  let currentDb = getUserDb(req.cookies["user_id"]);
+  const state = req.session.user_id;
+  let currentDb = getUserDb(req.session.user_id);
   console.log(!urlCheck(req.params.id));
   if (!urlCheck(req.params.id, currentDb)) {
     res.send("<h1>URL does not exist</h1>");
