@@ -30,8 +30,6 @@ const urlDatabase = {
   },
 };
 
-
-
 const usersDatabase = {
   admin: {
     id: "admin",
@@ -40,7 +38,6 @@ const usersDatabase = {
   },
 
 };
-
 
 // Gets
 
