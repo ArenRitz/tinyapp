@@ -44,18 +44,23 @@ const usersDatabase = {
 app.get("/urls", (req, res) => {
   const state = req.session.user_id;
   if (!state) {
-    res.send("<h1>Please login to see or add links</h1>");
+    res.redirect("/login");
   } else {
-    let currentDb = getUserDb(req.session.user_id, usersDatabase);
+    let currentDb = getUserDb(req.session.user_id, urlDatabase);
     const templateVars = { urls: currentDb, user: getUserByCookie(req.session.user_id, usersDatabase) };
     res.render("urls_index", templateVars);
   }
 });
 
 app.get("/", (req, res) => {
-  let currentDb = getUserDb(req.session.user_id, usersDatabase);
-  const templateVars = { urls: currentDb, user: getUserByCookie(req.session.user_id, usersDatabase) };
-  res.render("urls_index", templateVars);
+  const state = req.session.user_id;
+  if (!state) {
+    res.redirect("/login");
+  } else {
+    let currentDb = getUserDb(req.session.user_id, urlDatabase);
+    const templateVars = { urls: currentDb, user: getUserByCookie(req.session.user_id, usersDatabase) };
+    res.render("urls_index", templateVars);
+  }
 });
 
 app.get("/urls/new", (req, res) => {
@@ -70,11 +75,11 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/urls/:id", (req, res) => {
   const state = req.session.user_id;
-  let currentDb = getUserDb(req.session.user_id, usersDatabase);
+  let currentDb = getUserDb(req.session.user_id, urlDatabase);
   if (!urlCheck(req.params.id, currentDb)) {
     res.status(400).send("<h1>URL does not exist</h1>");
   } else if (!state) {
-    res.send("Please login to see or add links");
+    res.send('<script>alert("Please login to see or add links")</script>');
   } else if (currentDb[req.params.id] === undefined) {
     res.send("<h1>You don't have access to this link or it doesn't exist</h1>");
   } else {
@@ -100,12 +105,12 @@ app.get("/login", (req, res) => {
     res.redirect("/urls");
   } else {
     const templateVars = { user: state };
-    res.render("urls_login", templateVars)
+    res.render("urls_login", templateVars);
   }
 });
 
 app.get("/u/:id", (req, res) => {
-  let currentDb = getUserDb(req.session.user_id, usersDatabase);
+  let currentDb = getUserDb(req.session.user_id, urlDatabase);
   const longURL = getUrlbyId(req.params.id, currentDb);
   if (!longURL) {
     res.send("URL does not exist");
@@ -156,8 +161,11 @@ app.post("/urls", (req, res) => {
     res.send("Please login to create a new URL");
   } else {
     const id = generateRandomString();
+    console.log(id);
     const longURL = req.body.longURL;
+    console.log(longURL);
     const userID = req.session.user_id;
+    console.log(userID);
     addLinkToDatabase(id, longURL, userID, urlDatabase);
     res.redirect(`/urls/${id}`);
   }
@@ -165,7 +173,7 @@ app.post("/urls", (req, res) => {
 
 app.post("/urls/:id/delete", (req, res) => {
   const state = req.session.user_id;
-  let currentDb = getUserDb(req.session.user_id, usersDatabase);
+  let currentDb = getUserDb(req.session.user_id, urlDatabase);
   console.log(!urlCheck(req.params.id));
   if (!urlCheck(req.params.id, currentDb)) {
     res.send("<h1>URL does not exist</h1>");

@@ -1,10 +1,7 @@
 const bcrypt = require("bcryptjs");  // used to hash passwords
 const salt = bcrypt.genSaltSync(10);
 
-
-// Helper Funcs
-
-// returns the only the links the user has access to
+// returns an object that contains only the links that belong to the user
 const getUserDb = (cookie, db) => {
   let currentDb = {};
   let currentUser = cookie;
@@ -16,15 +13,15 @@ const getUserDb = (cookie, db) => {
     }
   }
   return currentDb;
-}
+};
 // generates ID used for new users and links
 const generateRandomString = () => {
   return Math.random().toString(36).substring(2, 8);
-}
+};
 // adds link to global urlDatabase
 const addLinkToDatabase = (id, url, user_id, db) => {
   db[id] = { "longURL": url, "userID": user_id };
-}
+};
 // verifies if url exists in global urlDatabase
 const urlCheck = (urlID, db) => {
   for (const id in db) {
@@ -33,8 +30,8 @@ const urlCheck = (urlID, db) => {
     }
   }
   return false;
-}
-
+};
+// returns an object with 2 boolean values representing if the email inputted is valid and if the password inputted is valid
 const verifyUser = (email, password, db) => {
   let verification = { "email": false, "password": false };
   for (let users in db) {
@@ -48,7 +45,7 @@ const verifyUser = (email, password, db) => {
   return verification;
 };
 
-// gets the user_id from cookie
+// gets the user in userdatabase from cookie
 const getUserByCookie = (cookie, db) => {
   for (let user in db) {
     if (db[user].id === cookie) {
@@ -56,8 +53,8 @@ const getUserByCookie = (cookie, db) => {
     }
   }
   return undefined;
-}
-// gets user_id from email
+};
+//  gets the user in userdatabase from email
 const getUserByEmail = (email, db) => {
   for (let user in db) {
     if (db[user].email === email) {
@@ -65,14 +62,14 @@ const getUserByEmail = (email, db) => {
     }
   }
   return undefined;
-}
+};
 // gets URL from the url id
 const getUrlbyId = (id, db) => {
   if (Object.keys(db).includes(id)) {
     return db[id];
   }
   return undefined;
-}
+};
 
 
 module.exports = { getUserDb, generateRandomString, addLinkToDatabase, urlCheck, verifyUser, getUserByCookie, getUserByEmail, getUrlbyId };
