@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");  // used to hash passwords
 const salt = bcrypt.genSaltSync(10);
 
-// returns an object that contains only the links that belong to the user
+// returns an object that contains only the links that belong to the user in the global urlDatabase
 const getUserDb = (cookie, db) => {
   let currentDb = {};
   let currentUser = cookie;
@@ -12,16 +12,19 @@ const getUserDb = (cookie, db) => {
       currentDb[key] = value;
     }
   }
-  return currentDb;
+  return currentDb; 
 };
+
 // generates ID used for new users and links
 const generateRandomString = () => {
   return Math.random().toString(36).substring(2, 8);
 };
+
 // adds link to global urlDatabase
 const addLinkToDatabase = (id, url, user_id, db) => {
   db[id] = { "longURL": url, "userID": user_id };
 };
+
 // verifies if url exists in global urlDatabase
 const urlCheck = (urlID, db) => {
   for (const id in db) {
@@ -31,6 +34,7 @@ const urlCheck = (urlID, db) => {
   }
   return false;
 };
+
 // returns an object with 2 boolean values representing if the email inputted is valid and if the password inputted is valid
 const verifyUser = (email, password, db) => {
   let verification = { "email": false, "password": false };
@@ -54,6 +58,7 @@ const getUserByCookie = (cookie, db) => {
   }
   return undefined;
 };
+
 //  gets the user in userdatabase from email
 const getUserByEmail = (email, db) => {
   for (let user in db) {
@@ -63,6 +68,7 @@ const getUserByEmail = (email, db) => {
   }
   return undefined;
 };
+
 // gets URL from the url id
 const getUrlbyId = (id, db) => {
   if (Object.keys(db).includes(id)) {

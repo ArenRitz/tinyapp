@@ -9,11 +9,12 @@ app.use(cookieSession({
   keys: ['CaNt#HaCk%ThIs^BaDdIes', 'VeRyEnCrYpTeD#PaSsW0rd'],
   maxAge: 24 * 60 * 60 * 1000
 })); // read cookies (needed for auth)
+
 app.use(express.urlencoded({ extended: true })); // used for form data
 const bcrypt = require("bcryptjs");  // used to hash passwords
 const salt = bcrypt.genSaltSync(10);
 
-const { getUserDb, generateRandomString, addLinkToDatabase, urlCheck, verifyUser, getUserByCookie, getUserByEmail, getUrlbyId } = require('./helpers.js');
+const {getUserDb, generateRandomString, addLinkToDatabase, urlCheck, verifyUser, getUserByCookie, getUserByEmail, getUrlbyId} = require('./helpers.js');
 
 
 
@@ -41,10 +42,11 @@ const usersDatabase = {
 
 // Gets
 
+// Will access list of URLs if logged in or send msg asking user to log-in
 app.get("/urls", (req, res) => {
   const state = req.session.user_id;
   if (!state) {
-    res.redirect("/login");
+    res.send("Please login to view your URLs");
   } else {
     let currentDb = getUserDb(req.session.user_id, urlDatabase);
     const templateVars = { urls: currentDb, user: getUserByCookie(req.session.user_id, usersDatabase) };
@@ -52,6 +54,7 @@ app.get("/urls", (req, res) => {
   }
 });
 
+// Will redirect to login page if not logged in or URLs if logged in
 app.get("/", (req, res) => {
   const state = req.session.user_id;
   if (!state) {
@@ -63,6 +66,7 @@ app.get("/", (req, res) => {
   }
 });
 
+// Allows to create new URL and adds them to the global URL database or redirects to login page if not logged in
 app.get("/urls/new", (req, res) => {
   const state = req.session.user_id;
   if (!state) {
@@ -73,9 +77,10 @@ app.get("/urls/new", (req, res) => {
   }
 });
 
+// View individual URL and allows to edit or send error msg if it doesn't exist, not logged in or if it doesn't belong to user
 app.get("/urls/:id", (req, res) => {
   const state = req.session.user_id;
-  let currentDb = getUserDb(req.session.user_id, urlDatabase);
+  let currentDb = getUserDb(state, urlDatabase);
   if (!urlCheck(req.params.id, currentDb)) {
     res.status(400).send("<h1>URL does not exist</h1>");
   } else if (!state) {
@@ -83,12 +88,12 @@ app.get("/urls/:id", (req, res) => {
   } else if (currentDb[req.params.id] === undefined) {
     res.send("<h1>You don't have access to this link or it doesn't exist</h1>");
   } else {
-    console.log(currentDb[req.params.id]);
-    const templateVars = { id: req.params.id, longURL: currentDb[req.params.id], user: getUserByCookie(req.session.user_id, usersDatabase) };
+    const templateVars = { id: req.params.id, longURL: currentDb[req.params.id], user: getUserByCookie(state, usersDatabase) };
     res.render("urls_show", templateVars);
   }
 });
 
+// Allows to create new user and adds them to the global user database or redirects to urls if already logged in.
 app.get("/register", (req, res) => {
   const state = req.session.user_id;
   if (state) {
@@ -99,6 +104,7 @@ app.get("/register", (req, res) => {
   }
 });
 
+// Allows to login or redirects to urls if already logged in.
 app.get("/login", (req, res) => {
   const state = req.session.user_id;
   if (state) {
@@ -109,6 +115,7 @@ app.get("/login", (req, res) => {
   }
 });
 
+// Redirects to longUrl if it exists or sends error msg if it doesn't
 app.get("/u/:id", (req, res) => {
   let currentDb = getUserDb(req.session.user_id, urlDatabase);
   const longURL = getUrlbyId(req.params.id, currentDb);
@@ -121,6 +128,7 @@ app.get("/u/:id", (req, res) => {
 
 // Posts
 
+// Sends error msg if user already exists or fields are empty. On succesful registration, creates cookie, signs user in and redirects to urls.
 app.post("/register", (req, res) => {
   const user_id = generateRandomString();
   if (!req.body.email.trim() || !req.body.password.trim()) {
@@ -135,7 +143,7 @@ app.post("/register", (req, res) => {
   }
 });
 
-
+// Sends error msg if email is not used, or password is incoorect. On succesful login, creates cookie, signs user in and redirects to urls.
 app.post("/login", (req, res) => {
   let verification = verifyUser(req.body.email, req.body.password, usersDatabase);
   if (verification.email === false) {
@@ -149,32 +157,30 @@ app.post("/login", (req, res) => {
 });
 
 
-
+// Delets cookie and redirects to login page
 app.post("/logout", (req, res) => {
-  req.session.user_id = null;
+  req.session = null;
   res.redirect("/login");
 });
 
+// Sends error msg if not logged in, otherwise populates page only with links that belong to the user
 app.post("/urls", (req, res) => {
   const state = req.session.user_id;
   if (!state) {
     res.send("Please login to create a new URL");
   } else {
     const id = generateRandomString();
-    console.log(id);
     const longURL = req.body.longURL;
-    console.log(longURL);
     const userID = req.session.user_id;
-    console.log(userID);
     addLinkToDatabase(id, longURL, userID, urlDatabase);
     res.redirect(`/urls/${id}`);
   }
 });
 
+// Allows to delete URL if it belongs to the user or sends error msg if it doesn't exist, user is not logged in or doesn't belong to user.
 app.post("/urls/:id/delete", (req, res) => {
   const state = req.session.user_id;
   let currentDb = getUserDb(req.session.user_id, urlDatabase);
-  console.log(!urlCheck(req.params.id));
   if (!urlCheck(req.params.id, currentDb)) {
     res.send("<h1>URL does not exist</h1>");
   } else if (!state) {
@@ -187,9 +193,10 @@ app.post("/urls/:id/delete", (req, res) => {
   }
 });
 
+// Allows to edit the longUrl without modifying the shortUrl and redirects to URLs
 app.post("/urls/:id/update", (req, res) => {
   urlDatabase[req.params.id]["longURL"] = req.body.longURL;
-  res.redirect("/");
+  res.redirect("/urls");
 });
 
 
